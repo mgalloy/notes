@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# optional title replaced with random hash if not present
 TITLE=$1
 
 #DATE_FORMAT="%Y.%m.%dT%H.%M.%S"
@@ -7,9 +8,7 @@ DATE_FORMAT="%Y.%m.%d"
 DT_STAMP=$(date +"${DATE_FORMAT}")
 
 if [ $# -lt 1 ]; then
-  HASH=$(echo $RANDOM | md5 | head -c 7)
-else
-  HASH=${TITLE}
+  TITLE=$(echo $RANDOM | md5 | head -c 7)
 fi
 
 FILENAME=${DT_STAMP}.${HASH}.md
