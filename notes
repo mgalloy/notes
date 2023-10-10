@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+
+import configparser
+import datetime
+import os
+
+import click
+import dateparser
+
+
+DATE_FMTS = ["%Y-%m-%d", "%Y%m%d", "fuzzy"]
+DAILY_DATETIME_FMT = "%Y.%m.%d"
+TODAY = str(datetime.date.today())
+
+
+# notes configuration file
+
+def read_config():
+    home = os.path.expanduser("~")
+    basename = ".notesrc"
+    config_filename = os.path.join(home, basename)
+    options = configparser.ConfigParser()
+    options.read(config_filename)
+    return(options)
+
+
+# Date class
+
+class Date(click.ParamType):
+    name = 'date'
+
+    def __init__(self, formats=None):
+        self.formats = formats or [
+            '%Y-%m-%d',
+            '%Y/%m/%d',
+            '%Y.%m.%d',
+            'fuzzy'
+        ]
+
+    def get_metavar(self, param):
+        return '[{}]'.format('|'.join(self.formats))
+
+    def _try_to_convert_date(self, value, format):
+        try:
+            if format == "fuzzy":
+                return dateparser.parse(value)
+            else:
+                return datetime.datetime.strptime(value, format).date()
+        except ValueError:
+            return None
+
+    def convert(self, value, param, ctx):
+        for format in self.formats:
+            date = self._try_to_convert_date(value, format)
+            if date:
+                return date
+
+        self.fail(
+            'invalid date format: {}. (choose from {})'.format(
+                value, ', '.join(self.formats)))
+
+    def __repr__(self):
+        return 'Date'
+
+
+# helper routines
+
+def convert_filename_string(title):
+    return(title.replace(" ", "-"))
+
+
+def create_note_basename(date, title):
+    date_str = date.strftime(DAILY_DATETIME_FMT)
+    filename_title = convert_filename_string(title)
+    return(f"{date_str}.{filename_title}.md")
+
+
+def create_note_filename(options, date, title):
+    basename = create_note_basename(date, title)
+    return(os.path.join(options.get("repo", "location"), basename))
+
+
+def create_note(filename, title):
+    if title == "DAILY":
+        note_title = f"Daily notes for {TODAY}"
+    else:
+        note_title = tilte
+
+    with open(filename, "w") as f:
+        f.write(f"# {note_title}\n\n")
+
+
+# CLI interface
+
+@click.group()
+@click.version_option(version="0.0.1")
+@click.help_option("-h", "--help")
+def cli():
+    pass
+
+
+@click.command()
+def add():
+    click.echo("add")
+
+
+@click.command()
+def init():
+    click.echo("init")
+
+
+@click.command()
+def config():
+    click.echo("config")
+
+
+@click.command()
+def list():
+    click.echo("list")
+
+
+@click.command()
+@click.option("--date", type=Date(formats=DATE_FMTS), default=TODAY)
+@click.argument("title", default="DAILY")
+def new(date, title):
+    options = read_config()
+
+    note_filename = create_note_filename(options, date, title)
+    note_basename = os.path.basename(note_filename)
+
+    if os.path.exists(note_filename):
+        click.echo(f"{note_basename} already exists")
+        return
+
+    click.echo(f"creating new note {note_basename}...")
+    create_note(note_filename, title)
+
+
+@click.command(name="open")
+def open_note():
+    click.echo("open")
+
+
+@click.command()
+def output():
+    click.echo("output")
+
+
+cli.add_command(add)
+cli.add_command(init)
+cli.add_command(config)
+cli.add_command(list)
+cli.add_command(new)
+cli.add_command(open_note)
+cli.add_command(output)
+    
+
+if __name__ == "__main__":
+    cli()
