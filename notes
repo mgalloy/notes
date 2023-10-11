@@ -168,7 +168,7 @@ def cli():
     pass
 
 
-@click.command()
+@cli.command()
 @click.help_option("-h", "--help")
 @click.option("--date", type=Date(), default=TODAY, help="Date of note to append.")
 @click.option("--title", default="DAILY", help="Title of note to append to.")
@@ -188,7 +188,7 @@ def append(date, title, text):
     append_to_note(note_filename, text)
 
 
-@click.command()
+@cli.command()
 @click.help_option("-h", "--help")
 def init():
     """ Initialize a notes repository.
@@ -196,7 +196,7 @@ def init():
     click.echo("init")
 
 
-@click.command()
+@cli.command()
 @click.help_option("-h", "--help")
 @click.option("--date", type=Date(), default=TODAY)
 def list(date):
@@ -212,7 +212,7 @@ def list(date):
             click.echo(f"{basename:20s}: {preview}")
 
 
-@click.command()
+@cli.command()
 @click.help_option("-h", "--help")
 @click.option("--date", type=Date(), default=TODAY)
 @click.option("--open", "open_flag", is_flag=True,
@@ -240,7 +240,7 @@ def new(date, open_flag, title):
         open_note_in_editor(editor, note_filename)
 
 
-@click.command(name="open")
+@cli.command(name="open")
 @click.help_option("-h", "--help")
 @click.option("--date", type=Date(), default=TODAY)
 @click.argument("title", default="DAILY")
@@ -261,7 +261,7 @@ def open_note(date, title):
     open_note_in_editor(editor, note_filename)
 
 
-@click.command()
+@cli.command()
 @click.help_option("-h", "--help")
 def output():
     """ Render note as HTML.
@@ -269,7 +269,7 @@ def output():
     click.echo("output")
 
 
-@click.command()
+@cli.command()
 @click.help_option("-h", "--help")
 def commit():
     """ Commit notes to repo.
@@ -279,7 +279,7 @@ def commit():
     protocol.commit("-a")
 
 
-@click.command()
+@cli.command()
 @click.help_option("-h", "--help")
 def pull():
     """ Pull notes from remote repo.
@@ -289,7 +289,7 @@ def pull():
     protocol.pull()
 
 
-@click.command()
+@cli.command()
 @click.help_option("-h", "--help")
 def push():
     """ Push notes to repo.
@@ -297,17 +297,6 @@ def push():
     options = read_config()
     protocol = create_protocol(options)
     protocol.push()
-
-
-cli.add_command(append)
-cli.add_command(init)
-cli.add_command(list)
-cli.add_command(new)
-cli.add_command(open_note)
-cli.add_command(output)
-cli.add_command(commit)
-cli.add_command(pull)
-cli.add_command(push)
     
 
 if __name__ == "__main__":
