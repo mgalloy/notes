@@ -1,0 +1,18 @@
+# Define the notes repository.
+[repo]
+
+# Only required entry in this configuration file.
+location           : /path/to/notes/repo
+
+# Protocol: git, svn, cvs, etc.
+protocol           : git
+
+
+[notes]
+editor             : /path/to/editor/executable
+template           : /path/to/template/file
+
+
+# Define options for creating HTML rendering of notes.
+[HTML]
+stylesheet         : /path/to/stylesheet.css

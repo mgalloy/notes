@@ -2,7 +2,9 @@
 
 import configparser
 import datetime
+import glob
 import os
+import subprocess
 
 import click
 import dateparser
@@ -30,13 +32,7 @@ class Date(click.ParamType):
     name = 'date'
 
     def __init__(self, formats=None):
-        self.formats = formats or [
-            '%Y-%m-%d',
-            '%Y.%m.%d',
-            '%Y%m%d',
-            '%Y/%m/%d',
-            'fuzzy'
-        ]
+        self.formats = formats or DATE_FMTS
 
     def get_metavar(self, param):
         return '[{}]'.format('|'.join(self.formats))
@@ -91,6 +87,16 @@ def create_note(filename, title):
         f.write(f"# {note_title}\n\n")
 
 
+def append_to_note(note_filename, text):
+    with open(note_filename, "a") as f:
+        f.write(f"{text}\n")
+
+
+def open_note_in_editor(editor, note_filename):
+    cmd = [editor, note_filename]
+    process = subprocess.Popen(cmd)
+
+
 # CLI interface
 
 @click.group()
@@ -101,29 +107,55 @@ def cli():
 
 
 @click.command()
-def add():
-    click.echo("add")
+@click.help_option("-h", "--help")
+@click.option("--date", type=Date(), default=TODAY, help="Date of note to append.")
+@click.option("--title", default="DAILY", help="Title of note to append to.")
+@click.argument("text")
+def append(date, title, text):
+    """ Append to a note.
+    """
+    options = read_config()
+
+    note_filename = create_note_filename(options, date, title)
+    note_basename = os.path.basename(note_filename)
+
+    if not os.path.exists(note_filename):
+        new(date, title)
+
+    click.echo(f"appending to note {note_basename}...")
+    append_to_note(note_filename, text)
 
 
 @click.command()
 def init():
+    """ Initialize a notes repository.
+    """
     click.echo("init")
 
 
 @click.command()
-def config():
-    click.echo("config")
-
-
-@click.command()
-def list():
-    click.echo("list")
+@click.option("--date", type=Date(), default=TODAY)
+def list(date):
+    """ List existing notes.
+    """
+    options = read_config()
+    notes = glob.glob(os.path.join(options.get("repo", "location"), "*.md"))
+    for n in notes: 
+        with open(n, "r") as f:
+            basename = os.path.basename(n)
+            content = f.read()
+            preview = content.split("\n")[0]
+            click.echo(f"{basename:20s}: {preview}")
 
 
 @click.command()
 @click.option("--date", type=Date(), default=TODAY)
+@click.option("--open", "open_flag", is_flag=True,
+    help="Open note after creating it.")
 @click.argument("title", default="DAILY")
-def new(date, title):
+def new(date, open_flag, title):
+    """ Create a new note for a given date with a title.
+    """
     options = read_config()
 
     note_filename = create_note_filename(options, date, title)
@@ -135,21 +167,41 @@ def new(date, title):
 
     click.echo(f"creating new note {note_basename}...")
     create_note(note_filename, title)
+    if open_flag:
+        click.echo(f"opening {note_basename}...")
+        editor = options.get("notes", "editor", fallback="open")
+        open_note_in_editor(editor, note_filename)
 
 
 @click.command(name="open")
-def open_note():
-    click.echo("open")
+@click.option("--date", type=Date(), default=TODAY)
+@click.argument("title", default="DAILY")
+def open_note(date, title):
+    """ Open the note in a text editor.
+    """
+    options = read_config()
+
+    note_filename = create_note_filename(options, date, title)
+    note_basename = os.path.basename(note_filename)
+
+    if not os.path.exists(note_filename):
+        click.echo(f"{note_basename} does not exist")
+        return
+
+    click.echo(f"opening {note_basename}...")
+    editor = options.get("notes", "editor", fallback="open")
+    open_note_in_editor(editor, note_filename)
 
 
 @click.command()
 def output():
+    """ Render note as HTML.
+    """
     click.echo("output")
 
 
-cli.add_command(add)
+cli.add_command(append)
 cli.add_command(init)
-cli.add_command(config)
 cli.add_command(list)
 cli.add_command(new)
 cli.add_command(open_note)
