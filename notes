@@ -270,6 +270,7 @@ def output():
 
 
 @click.command()
+@click.help_option("-h", "--help")
 def commit():
     """ Commit notes to repo.
     """
@@ -279,6 +280,7 @@ def commit():
 
 
 @click.command()
+@click.help_option("-h", "--help")
 def pull():
     """ Pull notes from remote repo.
     """
@@ -288,6 +290,7 @@ def pull():
 
 
 @click.command()
+@click.help_option("-h", "--help")
 def push():
     """ Push notes to repo.
     """
