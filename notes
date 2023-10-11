@@ -15,6 +15,66 @@ DAILY_DATETIME_FMT = "%Y.%m.%d"
 TODAY = str(datetime.date.today())
 
 
+# protocols
+
+class local(object):
+    def __init__(self, root):
+        pass
+
+    def add(self, filename):
+        pass
+
+    def commit(self, filename):
+        pass
+
+    def push(self):
+        pass
+
+    def pull(self):
+        pass
+
+
+class git(object):
+    def __init__(self, root, git_executable="git"):
+        self.root = root
+        self.git_executable = git_executable
+
+    def add(self, filename):
+        os.chdir(self.root)
+        cmd = [self.git_executable, "add", filename]
+        process = subprocess.Popen(cmd)
+
+    def commit(self, filename):
+        os.chdir(self.root)
+        click.echo(f"committing notes to local repo")
+        cmd = [self.git_executable, "commit", "-a", "-m", "Automated commit", filename]
+        process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL)
+
+    def pull(self):
+        os.chdir(self.root)
+        click.echo("pulling notes from remote repo...")
+        cmd = [self.git_executable, "pull"]
+        process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+    def push(self):
+        os.chdir(self.root)
+        click.echo("pushing notes to remote repo...")
+        cmd = [self.git_executable, "push"]
+        process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL)
+
+
+def create_protocol(options):
+    name = options.get("repo", "protocol", fallback="local")
+    root = options.get("repo", "location")
+
+    if name == "git":
+        return(git(root))
+    else:
+        return(local(root))
+
+
 # notes configuration file
 
 def read_config():
@@ -77,7 +137,7 @@ def create_note_filename(options, date, title):
     return(os.path.join(options.get("repo", "location"), basename))
 
 
-def create_note(filename, title):
+def create_note(filename, title, protocol):
     if title == "DAILY":
         note_title = f"Daily notes for {TODAY}"
     else:
@@ -85,6 +145,8 @@ def create_note(filename, title):
 
     with open(filename, "w") as f:
         f.write(f"# {note_title}\n\n")
+
+    protocol.add(filename)
 
 
 def append_to_note(note_filename, text):
@@ -155,7 +217,7 @@ def list(date):
 @click.option("--date", type=Date(), default=TODAY)
 @click.option("--open", "open_flag", is_flag=True,
     help="Open note after creating it.")
-@click.argument("title", default="DAILY")
+@click.option("--title", default="DAILY", help="Title of note to create.")
 def new(date, open_flag, title):
     """ Create a new note for a given date with a title.
     """
@@ -168,8 +230,10 @@ def new(date, open_flag, title):
         click.echo(f"{note_basename} already exists")
         return
 
+    protocol = create_protocol(options)
+
     click.echo(f"creating new note {note_basename}...")
-    create_note(note_filename, title)
+    create_note(note_filename, title, protocol)
     if open_flag:
         click.echo(f"opening {note_basename}...")
         editor = options.get("notes", "editor", fallback="open")
@@ -205,12 +269,42 @@ def output():
     click.echo("output")
 
 
+@click.command()
+def commit():
+    """ Commit notes to repo.
+    """
+    options = read_config()
+    protocol = create_protocol(options)
+    protocol.commit("-a")
+
+
+@click.command()
+def pull():
+    """ Pull notes from remote repo.
+    """
+    options = read_config()
+    protocol = create_protocol(options)
+    protocol.pull()
+
+
+@click.command()
+def push():
+    """ Push notes to repo.
+    """
+    options = read_config()
+    protocol = create_protocol(options)
+    protocol.push()
+
+
 cli.add_command(append)
 cli.add_command(init)
 cli.add_command(list)
 cli.add_command(new)
 cli.add_command(open_note)
 cli.add_command(output)
+cli.add_command(commit)
+cli.add_command(pull)
+cli.add_command(push)
     
 
 if __name__ == "__main__":
