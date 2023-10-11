@@ -127,6 +127,7 @@ def append(date, title, text):
 
 
 @click.command()
+@click.help_option("-h", "--help")
 def init():
     """ Initialize a notes repository.
     """
@@ -134,6 +135,7 @@ def init():
 
 
 @click.command()
+@click.help_option("-h", "--help")
 @click.option("--date", type=Date(), default=TODAY)
 def list(date):
     """ List existing notes.
@@ -149,6 +151,7 @@ def list(date):
 
 
 @click.command()
+@click.help_option("-h", "--help")
 @click.option("--date", type=Date(), default=TODAY)
 @click.option("--open", "open_flag", is_flag=True,
     help="Open note after creating it.")
@@ -174,6 +177,7 @@ def new(date, open_flag, title):
 
 
 @click.command(name="open")
+@click.help_option("-h", "--help")
 @click.option("--date", type=Date(), default=TODAY)
 @click.argument("title", default="DAILY")
 def open_note(date, title):
@@ -194,6 +198,7 @@ def open_note(date, title):
 
 
 @click.command()
+@click.help_option("-h", "--help")
 def output():
     """ Render note as HTML.
     """
