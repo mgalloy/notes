@@ -243,7 +243,7 @@ def new(date, open_flag, title):
 @cli.command(name="open")
 @click.help_option("-h", "--help")
 @click.option("--date", type=Date(), default=TODAY)
-@click.argument("title", default="DAILY")
+@click.option("--title", default="DAILY", help="Title of note to open.")
 def open_note(date, title):
     """ Open the note in a text editor.
     """
