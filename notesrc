@@ -4,7 +4,7 @@
 # Only required entry in this configuration file.
 location           : /path/to/notes/repo
 
-# Protocol: git, svn, cvs, etc.
+# Protocol: local or git
 protocol           : git
 
 
