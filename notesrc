@@ -9,9 +9,16 @@ protocol               : git
 
 
 [notes]
+# This path to the editor can include command line options, such as `emacs -nw`.
 editor                 : /path/to/editor/executable
-template               : /path/to/template/file
+
+# Mon 12:33
 datetime_stamp_format  : %a %H:%M
+
+
+[templates]
+time                   : /path/to/template/file
+daily                  : /path/to/template/file
 
 
 # Define options for creating HTML rendering of notes.

@@ -238,7 +238,7 @@ def list(date):
             basename = os.path.basename(n)
             content = f.read()
             preview = content.split("\n")[0]
-            click.echo(f"{basename:20s}: {preview}")
+            click.echo(f"{basename:24s}: {preview}")
 
 
 @cli.command()
