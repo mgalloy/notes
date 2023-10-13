@@ -2,17 +2,18 @@
 [repo]
 
 # Only required entry in this configuration file.
-location           : /path/to/notes/repo
+location               : /path/to/notes/repo
 
 # Protocol: local or git
-protocol           : git
+protocol               : git
 
 
 [notes]
-editor             : /path/to/editor/executable
-template           : /path/to/template/file
+editor                 : /path/to/editor/executable
+template               : /path/to/template/file
+datetime_stamp_format  : %a %H:%M
 
 
 # Define options for creating HTML rendering of notes.
 [HTML]
-stylesheet         : /path/to/stylesheet.css
+stylesheet             : /path/to/stylesheet.css

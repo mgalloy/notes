@@ -13,8 +13,8 @@ import dateparser
 DATE_FMTS = ["%Y-%m-%d", "%Y%m%d", "fuzzy"]
 DAILY_DATETIME_FMT = "%Y.%m.%d"
 TODAY = str(datetime.date.today())
-
-
+DAILY_NAME = "daily"
+DEFAULT_NOW_STAMP_FMT = "%Y.%m.%dT%H:%M"
 # protocols
 
 class local(object):
@@ -126,19 +126,30 @@ def convert_filename_string(title):
     return(title.replace(" ", "-"))
 
 
-def create_note_basename(date, title):
+def create_note_basename(title, date):
     date_str = date.strftime(DAILY_DATETIME_FMT)
     filename_title = convert_filename_string(title)
     return(f"{date_str}.{filename_title}.md")
 
 
-def create_note_filename(options, date, title):
-    basename = create_note_basename(date, title)
-    return(os.path.join(options.get("repo", "location"), basename))
+def create_note_filename(options, title, date, last):
+    basename = create_note_basename(title, date)
+    filename = os.path.join(options.get("repo", "location"), basename)
+
+    if last:
+        check_date = date
+        first_date = datetime.date(2023, 10, 2)
+
+        while not os.path.exists(filename) and check_date >= first_date:
+            check_date -= datetime.timedelta(days=1)
+            basename = create_note_basename(title, check_date)
+            filename = os.path.join(options.get("repo", "location"), basename)
+
+    return(filename)
 
 
 def create_note(filename, title, protocol):
-    if title == "DAILY":
+    if title == DAILY_NAME:
         note_title = f"Daily notes for {TODAY}"
     else:
         note_title = title
@@ -155,7 +166,12 @@ def append_to_note(note_filename, text):
 
 
 def open_note_in_editor(editor, note_filename):
-    cmd = [editor, note_filename]
+    """ Open the given note filename with the given editor command. Note that
+        the editor command might be an editor path followed by options to the
+        editor, i.e., `nova --line 3`.
+    """
+    cmd = editor.split()
+    cmd.append(note_filename)
     process = subprocess.Popen(cmd)
 
 
@@ -170,22 +186,33 @@ def cli():
 
 @cli.command()
 @click.help_option("-h", "--help")
+@click.option("--title", default=DAILY_NAME, help="Title of note to append to.")
 @click.option("--date", type=Date(), default=TODAY, help="Date of note to append.")
-@click.option("--title", default="DAILY", help="Title of note to append to.")
+@click.option("--stamp", is_flag=True, help="Add date/time stamp to text.")
+@click.option("--last", is_flag=True, help="Open last note with given title.")
 @click.argument("text")
-def append(date, title, text):
+def append(title, date, stamp, last, text):
     """ Append to a note.
     """
     options = read_config()
 
-    note_filename = create_note_filename(options, date, title)
+    note_filename = create_note_filename(options, title, date, last)
     note_basename = os.path.basename(note_filename)
 
     if not os.path.exists(note_filename):
         new(date, title)
 
+    fmt = options.get("notes", "datetime_stamp_format", raw=True,
+        fallback=DEFAULT_NOW_STAMP_FMT)
+    now = datetime.datetime.now().strftime(fmt)
+
+    if text:
+        note_text = f"{now} {text}"
+    else:
+        note_text = text
+
     click.echo(f"appending to note {note_basename}...")
-    append_to_note(note_filename, text)
+    append_to_note(note_filename, note_text)
 
 
 @cli.command()
@@ -195,6 +222,8 @@ def init():
     """
     click.echo("init")
 
+
+# TODO: this needs a --title option too
 
 @cli.command()
 @click.help_option("-h", "--help")
@@ -214,16 +243,16 @@ def list(date):
 
 @cli.command()
 @click.help_option("-h", "--help")
+@click.option("--title", default=DAILY_NAME, help="Title of note to create.")
 @click.option("--date", type=Date(), default=TODAY)
 @click.option("--open", "open_flag", is_flag=True,
     help="Open note after creating it.")
-@click.option("--title", default="DAILY", help="Title of note to create.")
-def new(date, open_flag, title):
+def new(title, date, open_flag):
     """ Create a new note for a given date with a title.
     """
     options = read_config()
 
-    note_filename = create_note_filename(options, date, title)
+    note_filename = create_note_filename(options, title, date, False)
     note_basename = os.path.basename(note_filename)
 
     if os.path.exists(note_filename):
@@ -242,14 +271,15 @@ def new(date, open_flag, title):
 
 @cli.command(name="open")
 @click.help_option("-h", "--help")
+@click.option("--title", default=DAILY_NAME, help="Title of note to open.")
 @click.option("--date", type=Date(), default=TODAY)
-@click.option("--title", default="DAILY", help="Title of note to open.")
-def open_note(date, title):
+@click.option("--last", is_flag=True, help="Open last note with given title.")
+def open_note(title, date, last):
     """ Open the note in a text editor.
     """
     options = read_config()
 
-    note_filename = create_note_filename(options, date, title)
+    note_filename = create_note_filename(options, title, date, last)
     note_basename = os.path.basename(note_filename)
 
     if not os.path.exists(note_filename):
