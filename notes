@@ -15,6 +15,8 @@ DAILY_DATETIME_FMT = "%Y.%m.%d"
 TODAY = str(datetime.date.today())
 DAILY_NAME = "daily"
 DEFAULT_NOW_STAMP_FMT = "%Y.%m.%dT%H:%M"
+
+
 # protocols
 
 class local(object):
@@ -123,7 +125,9 @@ class Date(click.ParamType):
 # helper routines
 
 def convert_filename_string(title):
-    return(title.replace(" ", "-"))
+    new_title = title.replace(" ", "-")
+    new_title = new_title.replace("/", "-")
+    return(new_title)
 
 
 def create_note_basename(title, date):
@@ -267,6 +271,15 @@ def new(title, date, open_flag):
         click.echo(f"opening {note_basename}...")
         editor = options.get("notes", "editor", fallback="open")
         open_note_in_editor(editor, note_filename)
+
+
+@cli.command()
+@click.help_option("-h", "--help")
+@click.argument("text")
+def find(text):
+    """ Find matching notes.
+    """
+    pass
 
 
 @cli.command(name="open")
